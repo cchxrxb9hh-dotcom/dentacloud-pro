@@ -1,0 +1,7 @@
+{
+  "name": "copy 5",
+  "description": "A comprehensive dental clinic management system featuring patient records, treatment progress notes, and AI-powered clinical summaries.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
