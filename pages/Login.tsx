@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Lock, Mail, ChevronRight, Activity, Sparkles, AlertCircle, User, UserPlus, Phone, MapPin } from 'lucide-react';
 
 interface LoginProps {
-  onLogin: (email: string, pass: string) => void;
+  onLogin: (email: string, pass: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   timeoutReason?: string | null;
 }
 
@@ -43,24 +43,9 @@ const Login = ({ onLogin, timeoutReason }: React.PropsWithChildren<LoginProps>) 
     setError('');
     setLoading(true);
 
-    setTimeout(() => {
-      const credentials = localStorage.getItem('denta_credentials');
-      const users: UserCredentials[] = credentials ? JSON.parse(credentials) : [];
-      const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-      if (!user) {
-        setError('No account found with this email. Please register first.');
-        setLoading(false);
-        return;
-      }
-
-      if (user.password !== password) {
-        setError('Incorrect password. Please try again.');
-        setLoading(false);
-        return;
-      }
-
-      onLogin(email, password);
+    setTimeout(async () => {
+      const result = await onLogin(email, password);
+      if (!result.ok) setError(result.error);
       setLoading(false);
     }, 800);
   };
@@ -86,7 +71,7 @@ const Login = ({ onLogin, timeoutReason }: React.PropsWithChildren<LoginProps>) 
 
     setLoading(true);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const credentials = localStorage.getItem('denta_credentials');
       const users: UserCredentials[] = credentials ? JSON.parse(credentials) : [];
 
@@ -109,21 +94,8 @@ const Login = ({ onLogin, timeoutReason }: React.PropsWithChildren<LoginProps>) 
       users.push(newUser);
       localStorage.setItem('denta_credentials', JSON.stringify(users));
 
-      const staffList = localStorage.getItem('denta_staff');
-      const staff = staffList ? JSON.parse(staffList) : [];
-      staff.push({
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        phone: newUser.phone,
-        address: newUser.address,
-        status: 'Active',
-        annualLeaveEntitlement: 20,
-      });
-      localStorage.setItem('denta_staff', JSON.stringify(staff));
-
-      onLogin(email, password);
+      const result = await onLogin(email, password);
+      if (!result.ok) setError(result.error);
       setLoading(false);
     }, 800);
   };
