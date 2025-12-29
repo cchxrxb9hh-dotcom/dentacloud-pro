@@ -189,7 +189,7 @@ interface UserContextType {
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
   isAuthenticated: boolean;
-  login: (email: string, pass: string) => void;
+  login: (email: string, pass: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   logout: (reason?: string) => void;
   sessionTimeoutReason: string | null;
   settings: ClinicSettings;
@@ -592,19 +592,74 @@ const UserProvider = ({ children }: React.PropsWithChildren<{}>) => {
     addAuditEntry('Updated Workspace Settings', 'Administrative', 'User modified clinic-wide configuration');
   };
 
-  const login = (email: string, pass: string) => {
+  type StoredCredentials = {
+    id: string;
+    name: string;
+    email: string;
+    password: string;
+    role: UserRole;
+    phone?: string;
+    address?: string;
+    assignedBranchId?: string;
+  };
+
+  const login = async (email: string, pass: string) => {
     setSessionTimeoutReason(null);
-    const savedStaff = localStorage.getItem('denta_staff');
-    const staffList = savedStaff ? JSON.parse(savedStaff) : [];
-    const existingUser = staffList.find((s: User) => s.email?.toLowerCase() === email.toLowerCase());
-    
-    if (existingUser) {
-      setCurrentUser(existingUser);
-      setIsAuthenticated(true);
-      localStorage.setItem('denta_user', JSON.stringify(existingUser));
-      resetTimer();
-      addAuditEntry('User Login Successful', 'Security', `Identity verified for ${email}`);
+    const normalizedEmail = (email || '').trim().toLowerCase();
+
+    if (!normalizedEmail || !pass) {
+      return { ok: false as const, error: 'Please enter your email and password.' };
     }
+
+    let credentialsList: StoredCredentials[] = [];
+    try {
+      const raw = localStorage.getItem('denta_credentials');
+      credentialsList = raw ? JSON.parse(raw) : [];
+    } catch {
+      return { ok: false as const, error: 'Saved credentials are corrupted. Please register again.' };
+    }
+
+    const credUser = credentialsList.find(u => (u.email || '').toLowerCase() === normalizedEmail);
+    if (!credUser) {
+      return { ok: false as const, error: 'No account found with this email. Please register first.' };
+    }
+
+    if (credUser.password !== pass) {
+      return { ok: false as const, error: 'Incorrect password. Please try again.' };
+    }
+
+    // Ensure a matching staff profile exists (used across the app)
+    let staffList: User[] = [];
+    try {
+      const savedStaff = localStorage.getItem('denta_staff');
+      staffList = savedStaff ? JSON.parse(savedStaff) : [];
+    } catch {
+      staffList = [];
+    }
+
+    let staffUser = staffList.find(s => (s.email || '').toLowerCase() === normalizedEmail);
+    if (!staffUser) {
+      staffUser = {
+        id: credUser.id,
+        name: credUser.name,
+        email: credUser.email,
+        role: credUser.role,
+        phone: credUser.phone,
+        address: credUser.address,
+        status: 'Active',
+        annualLeaveEntitlement: 20,
+        assignedBranchId: credUser.assignedBranchId || settings.branches?.[0]?.id,
+      };
+      staffList = [staffUser, ...staffList];
+      localStorage.setItem('denta_staff', JSON.stringify(staffList));
+    }
+
+    setCurrentUser(staffUser);
+    setIsAuthenticated(true);
+    localStorage.setItem('denta_user', JSON.stringify(staffUser));
+    resetTimer();
+    addAuditEntry('User Login Successful', 'Security', `Identity verified for ${normalizedEmail}`);
+    return { ok: true as const };
   };
 
   const logout = (reason?: string) => {
