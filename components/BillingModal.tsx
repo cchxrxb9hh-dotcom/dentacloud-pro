@@ -48,9 +48,7 @@ const BillingModal: React.FC<BillingModalProps> = ({
   const [branchId, setBranchId] = useState(initialBranchId || settings.branches[0]?.id || 'b1');
   const [date, setDate] = useState(initialDate || new Date().toISOString().split('T')[0]);
   const [paymentMethodId, setPaymentMethodId] = useState(settings.paymentMethods?.find(pm => pm.isActive)?.id || '');
-  const [items, setItems] = useState<{ description: string; price: number }[]>([
-    { description: 'Dental Consultation', price: 50 }
-  ]);
+  const [items, setItems] = useState<{ description: string; price: number }[]>([]);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [cardNumber, setCardNumber] = useState('');
   const [receiptData, setReceiptData] = useState<any | null>(null);
@@ -61,19 +59,31 @@ const BillingModal: React.FC<BillingModalProps> = ({
   const taxAmount = subtotal * (settings.taxSstRate / 100);
   const originalTotal = subtotal + taxAmount;
 
+  // Calculate original invoice items total (for comparison when new items are added)
+  const originalInvoiceItemsTotal = useMemo(() => {
+    if (!initialItems || initialItems.length === 0) return 0;
+    const sub = initialItems.reduce((sum, item) => sum + item.price, 0);
+    return sub + (sub * (settings.taxSstRate / 100));
+  }, [initialItems, settings.taxSstRate]);
+
   // Calculate the actual outstanding balance for the context of this modal
   const totalOutstanding = useMemo(() => {
+    // Calculate the cost of any NEW items added during this session
+    const newItemsTotal = Math.max(0, originalTotal - originalInvoiceItemsTotal);
+    
     if (relatedInvoiceId || (relatedInvoiceIds && relatedInvoiceIds.length > 0)) {
         const idsToProcess = relatedInvoiceId ? [relatedInvoiceId] : (relatedInvoiceIds || []);
         const targetInvoices = globalInvoices.filter(inv => idsToProcess.includes(inv.id));
-        return targetInvoices.reduce((sum, inv) => sum + (inv.amount - (inv.paidAmount || 0)), 0);
+        const invoiceBalance = targetInvoices.reduce((sum, inv) => sum + (inv.amount - (inv.paidAmount || 0)), 0);
+        // Total = invoice balance + any new items added during payment
+        return invoiceBalance + newItemsTotal;
     }
     // If editing a single record, balance is total minus what was already recorded as paid
     if (isEditing) {
         return Math.max(0, originalTotal - (initialPaidAmount || 0));
     }
     return originalTotal;
-  }, [relatedInvoiceId, relatedInvoiceIds, globalInvoices, originalTotal, isEditing, initialPaidAmount]);
+  }, [relatedInvoiceId, relatedInvoiceIds, globalInvoices, originalTotal, originalInvoiceItemsTotal, isEditing, initialPaidAmount]);
 
   const performGeneration = (
     targetItems: { description: string; price: number }[],
@@ -133,7 +143,7 @@ const BillingModal: React.FC<BillingModalProps> = ({
     if (isOpen) {
       const freshItems = initialItems && initialItems.length > 0 
         ? initialItems 
-        : [{ description: 'Dental Consultation', price: 50 }];
+        : [];
       
       setItems(freshItems);
       setBranchId(initialBranchId || settings.branches[0]?.id || 'b1');
@@ -162,11 +172,21 @@ const BillingModal: React.FC<BillingModalProps> = ({
     }
   }, [isOpen, initialItems, initialType, initialBranchId, initialDate, isEditing, invoiceId, relatedInvoiceId, relatedInvoiceIds, initialPaidAmount, settings.taxSstRate, globalInvoices]);
 
+  // Only auto-fill payment amount to full total on initial modal open for new receipts
+  // Don't override if user has already modified the amount
+  const [hasUserModifiedPayment, setHasUserModifiedPayment] = useState(false);
+  
   useEffect(() => {
-      if (!isEditing && !relatedInvoiceId && !relatedInvoiceIds && type === 'Receipt') {
+      if (isOpen) {
+          setHasUserModifiedPayment(false);
+      }
+  }, [isOpen]);
+  
+  useEffect(() => {
+      if (!isEditing && !relatedInvoiceId && !relatedInvoiceIds && type === 'Receipt' && !hasUserModifiedPayment) {
           setPaymentAmount(originalTotal);
       }
-  }, [originalTotal, type, isEditing, relatedInvoiceId, relatedInvoiceIds]);
+  }, [originalTotal, type, isEditing, relatedInvoiceId, relatedInvoiceIds, hasUserModifiedPayment]);
 
   useEffect(() => {
     if (isOpen) {
@@ -229,8 +249,12 @@ const BillingModal: React.FC<BillingModalProps> = ({
     const docName = type === 'Invoice' ? `Invoice_${receiptData.invoiceNumber}` : `Receipt_${receiptData.receiptNumber}`;
     
     let status: Invoice['status'] = 'Pending';
-    if (type === 'Receipt') status = 'Paid';
-    else {
+    if (type === 'Receipt') {
+        // For receipts, status reflects whether this is a full or partial payment
+        if (paymentAmount >= originalTotal - 0.01) status = 'Paid';
+        else if (paymentAmount > 0) status = 'Partially Paid';
+        else status = 'Paid';
+    } else {
         if (paymentAmount >= originalTotal) status = 'Paid';
         else if (paymentAmount > 0) status = 'Partially Paid';
     }
@@ -239,7 +263,23 @@ const BillingModal: React.FC<BillingModalProps> = ({
     if (type === 'Receipt' && (relatedInvoiceId || (relatedInvoiceIds && relatedInvoiceIds.length > 0)) && onUpdate && onSaveInvoice) {
         const idsToProcess = relatedInvoiceId ? [relatedInvoiceId] : (relatedInvoiceIds || []);
         
-        // 1. Create and Save the Receipt Record First
+        // Check if new items were added during payment
+        const newItemsAdded = originalTotal > originalInvoiceItemsTotal + 0.01;
+        const newItemsTotal = Math.max(0, originalTotal - originalInvoiceItemsTotal);
+        
+        // 1. If new items were added, update the original invoice to include them
+        if (newItemsAdded && relatedInvoiceId) {
+            const originalInvoice = globalInvoices.find(inv => inv.id === relatedInvoiceId);
+            if (originalInvoice) {
+                const updatedAmount = originalInvoice.amount + newItemsTotal;
+                onUpdate(relatedInvoiceId, { 
+                    amount: updatedAmount, 
+                    items: items 
+                });
+            }
+        }
+        
+        // 2. Create and Save the Receipt Record
         const receiptRecord: Invoice = {
             id: receiptData.receiptNumber,
             recordType: 'Receipt',
@@ -257,9 +297,20 @@ const BillingModal: React.FC<BillingModalProps> = ({
         };
         onSaveInvoice(receiptRecord);
 
-        // 2. Update the related invoices
+        // 3. Update the related invoices with payment allocation
         let remainingToAllocate = paymentAmount;
-        const targetInvoices = globalInvoices
+        
+        // Re-fetch invoices to get updated amounts if we added new items
+        const updatedInvoices = newItemsAdded 
+            ? globalInvoices.map(inv => {
+                if (inv.id === relatedInvoiceId) {
+                    return { ...inv, amount: inv.amount + newItemsTotal, items: items };
+                }
+                return inv;
+            })
+            : globalInvoices;
+            
+        const targetInvoices = updatedInvoices
             .filter(inv => idsToProcess.includes(inv.id))
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -274,7 +325,7 @@ const BillingModal: React.FC<BillingModalProps> = ({
             onUpdate(inv.id, { paidAmount: newTotalPaid, status: invStatus });
             remainingToAllocate -= allocation;
         }
-        addAuditEntry(`Processed Payment`, 'Financial', `Paid ${paymentAmount} for ${idsToProcess.length} invoices`);
+        addAuditEntry(`Processed Payment`, 'Financial', `Paid ${paymentAmount} for ${idsToProcess.length} invoices${newItemsAdded ? ' (includes new items)' : ''}`);
     } 
     else if (isEditing && onUpdate && invoiceId) {
         onUpdate(invoiceId, { branchId, date, amount: originalTotal, status, items, paidAmount: type === 'Receipt' ? paymentAmount : (initialPaidAmount || 0) });
@@ -385,11 +436,9 @@ const BillingModal: React.FC<BillingModalProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Billable Items</label>
-                {!relatedInvoiceId && !relatedInvoiceIds && (
-                    <button onClick={addItem} className="text-blue-600 hover:text-blue-700 text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
-                    <Plus size={14} /> Add Item
-                    </button>
-                )}
+                <button onClick={addItem} className="text-blue-600 hover:text-blue-700 text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                  <Plus size={14} /> Add Item
+                </button>
               </div>
               <div className="space-y-3">
                 {items.map((item, idx) => (
@@ -399,9 +448,8 @@ const BillingModal: React.FC<BillingModalProps> = ({
                         value={item.description} 
                         onChange={(e) => updateItem(idx, 'description', e.target.value)} 
                         placeholder="Service" 
-                        className={`flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 ${(relatedInvoiceId || relatedInvoiceIds) ? 'opacity-70 pointer-events-none' : ''}`} 
+                        className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
                         list="service-list-billing" 
-                        readOnly={!!relatedInvoiceId || !!relatedInvoiceIds}
                     />
                     <div className="w-24 relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] font-black">RM</span>
@@ -409,11 +457,10 @@ const BillingModal: React.FC<BillingModalProps> = ({
                         type="number" 
                         value={item.price} 
                         onChange={(e) => updateItem(idx, 'price', e.target.value)} 
-                        className={`w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-right text-slate-900 ${(relatedInvoiceId || relatedInvoiceIds) ? 'opacity-70 pointer-events-none' : ''}`} 
-                        readOnly={!!relatedInvoiceId || !!relatedInvoiceIds}
+                        className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-right text-slate-900"
                       />
                     </div>
-                    {items.length > 1 && !relatedInvoiceId && !relatedInvoiceIds && <button onClick={() => removeItem(idx)} className="p-2.5 text-slate-300 hover:text-red-500"><Trash2 size={16} /></button>}
+                    {items.length > 1 && <button onClick={() => removeItem(idx)} className="p-2.5 text-slate-300 hover:text-red-500"><Trash2 size={16} /></button>}
                   </div>
                 ))}
                 <datalist id="service-list-billing">{services.map(s => <option key={s.id} value={s.name} />)}</datalist>
@@ -435,7 +482,10 @@ const BillingModal: React.FC<BillingModalProps> = ({
                       <input 
                         type="number"
                         value={paymentAmount}
-                        onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                        onChange={(e) => {
+                          setPaymentAmount(parseFloat(e.target.value) || 0);
+                          setHasUserModifiedPayment(true);
+                        }}
                         className="w-full px-4 py-2 bg-white border border-emerald-200 rounded-xl text-base font-black text-emerald-700 outline-none focus:ring-2 focus:ring-emerald-500"
                       />
                       <div className="flex justify-between text-xs font-bold text-emerald-600 mt-1">

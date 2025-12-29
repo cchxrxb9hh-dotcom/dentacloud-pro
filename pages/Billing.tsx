@@ -247,8 +247,10 @@ const Billing: React.FC = () => {
             <tbody className="divide-y divide-slate-50">
               {filteredInvoices.map((inv) => {
                 const isReceipt = inv.recordType === 'Receipt';
-                const paidDisplay = isReceipt ? inv.amount : (inv.paidAmount || 0);
-                const balanceDisplay = isReceipt ? 0 : Math.max(0, inv.amount - paidDisplay);
+                // For receipts, paidAmount is the actual amount received
+                // For invoices, paidAmount tracks how much has been paid
+                const paidDisplay = inv.paidAmount || 0;
+                const balanceDisplay = isReceipt ? Math.max(0, inv.amount - paidDisplay) : Math.max(0, inv.amount - paidDisplay);
                 
                 return (
                   <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors group">

@@ -144,7 +144,7 @@ const MigrationCenter: React.FC = () => {
                       <p className="text-xs text-slate-600 font-medium">Open Command Prompt or Terminal and run the following command:</p>
                       <div className="mt-2 bg-slate-900 p-4 rounded-xl relative group">
                         <code className="text-blue-400 text-xs font-mono block overflow-x-auto whitespace-nowrap pb-1">
-                          mysqldump -u root -p opendental > opendental_migration.sql
+                          mysqldump -u root -p opendental {'>'} opendental_migration.sql
                         </code>
                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button onClick={() => navigator.clipboard.writeText('mysqldump -u root -p opendental > opendental_migration.sql')} className="p-1.5 bg-white/10 hover:bg-white/20 rounded text-white text-[9px] font-black uppercase tracking-widest">Copy</button>

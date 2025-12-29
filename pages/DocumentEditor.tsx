@@ -5,12 +5,7 @@ import { FileText, Save, Printer, User, Bold, Italic, Underline, List, ListOrder
 import { Patient } from '../types';
 import { useUser } from '../App';
 
-// Mock patients for selection
-const MOCK_PATIENTS: Patient[] = [
-  { id: '1', firstName: 'John', lastName: 'Doe', email: 'john@example.com', phone: '123-456-7890', dateOfBirth: '1985-06-15', gender: 'Male', address: '123 Maple St', medicalHistory: ['Allergy to Penicillin'], status: 'Active', lastVisit: '2023-11-20' },
-  { id: '2', firstName: 'Alice', lastName: 'Smith', email: 'alice@example.com', phone: '234-567-8901', dateOfBirth: '1992-02-28', gender: 'Female', address: '456 Oak Ave', medicalHistory: [], status: 'Active', lastVisit: '2023-12-05' },
-  { id: '3', firstName: 'Michael', lastName: 'Brown', email: 'michael@example.com', phone: '345-678-9012', dateOfBirth: '1978-09-10', gender: 'Male', address: '789 Pine Ln', medicalHistory: ['Diabetes Type 2'], status: 'Active', lastVisit: '2023-10-15' },
-];
+// Use real patients from context instead of mock data
 
 const ToolbarButton = ({ icon: Icon, onClick, command, value, title }: any) => (
     <button
@@ -24,7 +19,7 @@ const ToolbarButton = ({ icon: Icon, onClick, command, value, title }: any) => (
 );
 
 const DocumentEditor: React.FC = () => {
-    const { addAuditEntry } = useUser();
+    const { addAuditEntry, patients } = useUser();
     const { docId } = useParams<{ docId?: string }>();
     const navigate = useNavigate();
     const editorRef = useRef<HTMLDivElement>(null);
@@ -44,7 +39,7 @@ const DocumentEditor: React.FC = () => {
             if (docToEdit) {
                 setTitle(docToEdit.name);
                 setInitialContent(docToEdit.content);
-                const patient = MOCK_PATIENTS.find(p => p.id === docToEdit.patientId);
+                const patient = patients.find(p => p.id === docToEdit.patientId);
                 setSelectedPatient(patient || null);
             } else {
                 alert('Document not found.');
@@ -132,7 +127,7 @@ const DocumentEditor: React.FC = () => {
     };
 
     const filteredPatients = patientSearch
-        ? MOCK_PATIENTS.filter(p => `${p.firstName} ${p.lastName}`.toLowerCase().includes(patientSearch.toLowerCase()))
+        ? patients.filter(p => `${p.firstName} ${p.lastName}`.toLowerCase().includes(patientSearch.toLowerCase()))
         : [];
 
     return (

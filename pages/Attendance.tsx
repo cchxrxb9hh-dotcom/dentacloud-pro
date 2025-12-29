@@ -23,26 +23,11 @@ import { StaffAttendance, AttendanceRecord } from '../types';
 import FingerprintScanner from '../components/FingerprintScanner';
 import { useUser } from '../App';
 
-const MOCK_ATTENDANCE: StaffAttendance[] = [
-  { userId: '1', name: 'Dr. Sarah Johnson', role: 'Admin', currentStatus: 'In', lastEvent: '08:05 AM', totalHoursToday: '6h 12m' },
-  { userId: '2', name: 'Dr. Michael Chen', role: 'Doctor', currentStatus: 'Break', lastEvent: '12:30 PM', totalHoursToday: '4h 30m' },
-  { userId: '3', name: 'Emma Wilson', role: 'Assistant', currentStatus: 'Out', lastEvent: '05:00 PM (Prev)', totalHoursToday: '0h 0m' },
-  { userId: '4', name: 'Robert Blake', role: 'Accountant', currentStatus: 'In', lastEvent: '09:00 AM', totalHoursToday: '5h 17m' },
-];
+const MOCK_ATTENDANCE: StaffAttendance[] = [];
 
-const MOCK_RECORDS: AttendanceRecord[] = [
-  { id: '1', userId: '1', userName: 'Dr. Sarah Johnson', timestamp: '2023-12-10 08:05:22', type: 'In', method: 'Fingerprint' },
-  { id: '2', userId: '4', userName: 'Robert Blake', timestamp: '2023-12-10 09:00:15', type: 'In', method: 'Fingerprint' },
-  { id: '3', userId: '2', userName: 'Dr. Michael Chen', timestamp: '2023-12-10 09:12:44', type: 'In', method: 'Fingerprint' },
-  { id: '4', userId: '2', userName: 'Dr. Michael Chen', timestamp: '2023-12-10 12:30:10', type: 'Break_Start', method: 'Fingerprint' },
-];
+const MOCK_RECORDS: AttendanceRecord[] = [];
 
-const MOCK_MONTHLY_REPORT = [
-  { userId: '1', name: 'Dr. Sarah Johnson', days: 22, hours: 176, rate: 85, overtime: 12 },
-  { userId: '2', name: 'Dr. Michael Chen', days: 20, hours: 160, rate: 75, overtime: 5 },
-  { userId: '3', name: 'Emma Wilson', days: 18, hours: 144, rate: 25, overtime: 0 },
-  { userId: '4', name: 'Robert Blake', days: 21, hours: 168, rate: 45, overtime: 2 },
-];
+const MOCK_MONTHLY_REPORT: { userId: string; name: string; days: number; hours: number; rate: number; overtime: number }[] = [];
 
 const Attendance: React.FC = () => {
   const { currentUser, addAuditEntry } = useUser();

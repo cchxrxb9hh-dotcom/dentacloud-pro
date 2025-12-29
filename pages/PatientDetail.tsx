@@ -115,6 +115,8 @@ const PatientDetail: React.FC = () => {
   
   const [openLogMenuId, setOpenLogMenuId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const xrayInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const foundPatient = patients.find(p => p.id === id);
@@ -171,6 +173,52 @@ const PatientDetail: React.FC = () => {
     };
     persistFiles([...files, newFile]);
     addAuditEntry('Captured Clinical Image', 'Clinical', `Photo for ${patient?.firstName}`);
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const uploadedFiles = e.target.files;
+    if (!uploadedFiles) return;
+
+    Array.from(uploadedFiles).forEach((file: File) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        const newFile: ClinicalFile = {
+          id: `photo-${Date.now()}-${Math.random()}`,
+          name: file.name,
+          url: result,
+          category: 'Picture',
+          date: new Date().toISOString().split('T')[0],
+        };
+        persistFiles([...files, newFile]);
+      };
+      reader.readAsDataURL(file);
+    });
+    addAuditEntry('Uploaded Photo', 'Clinical', `${uploadedFiles.length} photo(s) for ${patient?.firstName}`);
+    e.target.value = '';
+  };
+
+  const handleXrayUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const uploadedFiles = e.target.files;
+    if (!uploadedFiles) return;
+
+    Array.from(uploadedFiles).forEach((file: File) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        const newFile: ClinicalFile = {
+          id: `xray-${Date.now()}-${Math.random()}`,
+          name: file.name,
+          url: result,
+          category: 'X-Ray',
+          date: new Date().toISOString().split('T')[0],
+        };
+        persistFiles([...files, newFile]);
+      };
+      reader.readAsDataURL(file);
+    });
+    addAuditEntry('Uploaded X-Ray', 'Clinical', `${uploadedFiles.length} X-ray(s) for ${patient?.firstName}`);
+    e.target.value = '';
   };
 
   const handleSaveDocument = (data: { name: string, content: string }) => {
@@ -661,6 +709,14 @@ const PatientDetail: React.FC = () => {
                                 <Camera size={32} />
                                 <span className="text-[10px] font-black uppercase tracking-widest text-center">Capture</span>
                             </div>
+                            <div onClick={() => photoInputRef.current?.click()} className="group border-2 border-dashed border-slate-200 rounded-[32px] p-8 flex flex-col items-center justify-center gap-4 hover:border-emerald-400 hover:bg-emerald-50/30 transition-all cursor-pointer text-slate-400 hover:text-emerald-600">
+                                <Upload size={32} />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-center">Upload Photo</span>
+                            </div>
+                            <div onClick={() => xrayInputRef.current?.click()} className="group border-2 border-dashed border-slate-200 rounded-[32px] p-8 flex flex-col items-center justify-center gap-4 hover:border-amber-400 hover:bg-amber-50/30 transition-all cursor-pointer text-slate-400 hover:text-amber-600">
+                                <Upload size={32} />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-center">Upload X-Ray</span>
+                            </div>
                             <div onClick={handleBridgeNNT} className="group border-2 border-dashed border-slate-200 rounded-[32px] p-8 flex flex-col items-center justify-center gap-4 hover:border-purple-400 hover:bg-purple-50/30 transition-all cursor-pointer text-slate-400 hover:text-purple-600">
                                 <Scan size={32} />
                                 <span className="text-[10px] font-black uppercase tracking-widest text-center">X-Ray Bridge</span>
@@ -891,6 +947,30 @@ const PatientDetail: React.FC = () => {
         title="Void Record?"
         message="Are you sure you want to void this billing record? This will remove it from financial reports permanently."
         confirmLabel="Void Record"
+      />
+
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileUpload} 
+        className="hidden" 
+        multiple 
+      />
+      <input 
+        type="file" 
+        ref={photoInputRef} 
+        onChange={handlePhotoUpload} 
+        accept="image/*" 
+        className="hidden" 
+        multiple 
+      />
+      <input 
+        type="file" 
+        ref={xrayInputRef} 
+        onChange={handleXrayUpload} 
+        accept="image/*" 
+        className="hidden" 
+        multiple 
       />
     </div>
   );

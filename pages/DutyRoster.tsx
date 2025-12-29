@@ -25,13 +25,7 @@ import {
 import { useUser } from '../App';
 import { LeaveRequest, User as StaffUser } from '../types';
 
-const INITIAL_LEAVES: LeaveRequest[] = [
-  { id: 'l1', userId: '2', userName: 'Dr. Michael Chen', type: 'Annual', startDate: '2024-12-15', endDate: '2024-12-18', status: 'Approved' },
-  { id: 'l2', userId: '3', userName: 'Emma Wilson', type: 'Medical', startDate: '2024-12-10', endDate: '2024-12-10', status: 'Approved' },
-  { id: 'l3', userId: '4', userName: 'Robert Blake', type: 'Emergency', startDate: '2024-12-20', endDate: '2024-12-20', status: 'Pending', reason: 'Family Emergency' },
-  { id: 'l4', userId: '1', userName: 'Dr. Sarah Johnson', type: 'Annual', startDate: '2024-12-02', endDate: '2024-12-04', status: 'Approved' },
-
-];
+const INITIAL_LEAVES: LeaveRequest[] = [];
 
 const DutyRoster: React.FC = () => {
   const { currentUser, addAuditEntry } = useUser();

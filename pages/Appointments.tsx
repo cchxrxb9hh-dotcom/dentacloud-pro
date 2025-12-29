@@ -61,12 +61,8 @@ const TREATMENT_PRICES: Record<string, number> = {
   'Check-up': 50
 };
 
-// Mock staff for assignment
-const INITIAL_MOCK_STAFF: StaffUser[] = [
-  { id: 'd1', name: 'Dr. Sarah Johnson', role: 'Admin' },
-  { id: 'd2', name: 'Dr. Michael Chen', role: 'Doctor' },
-  { id: 'd3', name: 'Emma Wilson', role: 'Assistant' },
-];
+// Staff for assignment - loads from localStorage
+const INITIAL_STAFF: StaffUser[] = [];
 
 // Helper to generate 30-min slots from 08:00 to 21:00
 const GENERATE_TIME_SLOTS = () => {
@@ -81,13 +77,7 @@ const GENERATE_TIME_SLOTS = () => {
 
 const TIME_SLOTS = GENERATE_TIME_SLOTS();
 
-const INITIAL_APPOINTMENTS: Appointment[] = [
-  { id: '1', patientId: '1', patientName: 'John Doe', patientPhone: '60123456789', branchId: 'b1', date: new Date().toISOString().split('T')[0], time: '09:00', treatmentType: 'Root Canal', duration: 60, status: 'Confirmed', doctorIds: ['d1'], type: 'Patient' },
-  { id: '2', patientId: '2', patientName: 'Alice Smith', patientPhone: '60123456780', branchId: 'b1', date: new Date().toISOString().split('T')[0], time: '11:30', treatmentType: 'Scaling', duration: 30, status: 'Arrived', arrivedAt: new Date(Date.now() - 15 * 60000).toISOString(), doctorIds: ['d2'], type: 'Patient' },
-  { id: '3', patientId: '3', patientName: 'Michael Brown', patientPhone: '60123456781', branchId: 'b2', date: new Date().toISOString().split('T')[0], time: '09:00', treatmentType: 'Extraction', duration: 45, status: 'In Treatment', arrivedAt: new Date(Date.now() - 45 * 60000).toISOString(), doctorIds: ['d1', 'd3'], type: 'Patient' },
-  { id: '4', patientId: '4', patientName: 'Emma Wilson', patientPhone: '60123456782', branchId: 'b3', date: new Date().toISOString().split('T')[0], time: '15:30', treatmentType: 'Check-up', duration: 15, status: 'Completed', doctorIds: ['d2'], type: 'Patient' },
-  { id: '5', patientId: 'N/A', patientName: 'N/A', branchId: 'b1', date: new Date().toISOString().split('T')[0], time: '13:00', treatmentType: 'Staff Lunch Break', duration: 60, status: 'Confirmed', doctorIds: ['d1', 'd2', 'd3'], type: 'DoctorBlock' },
-];
+const INITIAL_APPOINTMENTS: Appointment[] = [];
 
 interface AppointmentCardProps {
   appt: Appointment;
@@ -368,7 +358,10 @@ const Appointments: React.FC = () => {
   const [selectedBranchId, setSelectedBranchId] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'consolidated' | 'doctor'>('consolidated');
   const [appointments, setAppointments] = useState<Appointment[]>(INITIAL_APPOINTMENTS);
-  const [staffList, setStaffList] = useState<StaffUser[]>(INITIAL_MOCK_STAFF);
+  const [staffList, setStaffList] = useState<StaffUser[]>(() => {
+    const saved = localStorage.getItem('denta_staff');
+    return saved ? JSON.parse(saved) : INITIAL_STAFF;
+  });
   const [isAddAppointmentModalOpen, setIsAddAppointmentModalOpen] = useState(false);
   const [newAppointmentSlot, setNewAppointmentSlot] = useState<{ date: string; time: string; doctorId?: string; } | null>(null);
   const [isBillingModalOpen, setIsBillingOpen] = useState(false);
@@ -454,12 +447,11 @@ const Appointments: React.FC = () => {
 
   const handleOpenBilling = (patientId: string, patientName: string, treatmentType: string, branchId: string) => {
     if (!canBill) return;
-    const price = TREATMENT_PRICES[treatmentType] || 50;
     setSelectedPatientForBilling({ 
       id: patientId, 
       name: patientName,
       branchId: branchId,
-      items: [{ description: treatmentType, price }]
+      items: []
     });
     setIsBillingOpen(true);
   };
@@ -1099,6 +1091,7 @@ const Appointments: React.FC = () => {
         initialSlot={newAppointmentSlot}
       />
       <BillingModal 
+        key={`billing-${selectedPatientForBilling?.id}-${selectedPatientForBilling?.items?.[0]?.description || 'none'}`}
         isOpen={isBillingModalOpen} 
         onClose={() => {
             setIsBillingOpen(false);

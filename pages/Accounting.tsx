@@ -63,32 +63,13 @@ import ExpenseModal from '../components/ExpenseModal';
 import ReceiveBatchModal from '../components/ReceiveBatchModal';
 import PayslipModal from '../components/PayslipModal';
 
-const MOCK_ASSETS: FixedAsset[] = [
-  { id: 'as1', name: 'A-dec 500 Dental Chair', category: 'Clinical Equipment', purchaseDate: '2022-01-15', purchasePrice: 45000, salvageValue: 5000, usefulLifeYears: 10, branchId: 'b1' },
-  { id: 'as2', name: 'Planmeca ProMax 3D X-Ray', category: 'Clinical Equipment', purchaseDate: '2021-06-10', purchasePrice: 120000, salvageValue: 15000, usefulLifeYears: 8, branchId: 'b1' },
-  { id: 'as3', name: 'Reception Front Desk', category: 'Office Furniture', purchaseDate: '2023-03-22', purchasePrice: 8500, salvageValue: 500, usefulLifeYears: 5, branchId: 'b2' },
-];
+const MOCK_ASSETS: FixedAsset[] = [];
 
-const MOCK_INVENTORY: FormularyItem[] = [
-  { id: 'i1', name: 'Composite Resin Pack', category: 'Other', strength: 'A2', dosageForm: 'Syringe', stockLevel: 45, unitPrice: 85.00 },
-  { id: 'i2', name: 'Sterile Gloves (Box)', category: 'Other', strength: 'Medium', dosageForm: 'Box', stockLevel: 12, unitPrice: 24.50 },
-  { id: 'i3', name: 'Anesthetic Cartridges', category: 'Anesthetics', strength: '2%', dosageForm: 'Box', stockLevel: 8, unitPrice: 145.00 },
-];
+const MOCK_INVENTORY: FormularyItem[] = [];
 
-const MOCK_PAYROLL: PayrollRecord[] = [
-  { id: 'p1', userId: 'd1', userName: 'Dr. Sarah Johnson', grossSalary: 12000, allowances: 500, deductions: 1200, netPay: 11300, status: 'Paid' },
-  { id: 'p2', userId: 'd2', userName: 'Dr. Michael Chen', grossSalary: 10000, allowances: 300, deductions: 1000, netPay: 9300, status: 'Approved' },
-];
+const MOCK_PAYROLL: PayrollRecord[] = [];
 
-const MOCK_CHART_DATA = [
-  { month: 'Jan', revenue: 45000, expenses: 32000 },
-  { month: 'Feb', revenue: 52000, expenses: 34000 },
-  { month: 'Mar', revenue: 48000, expenses: 31000 },
-  { month: 'Apr', revenue: 61000, expenses: 38000 },
-  { month: 'May', revenue: 55000, expenses: 35000 },
-  { month: 'Jun', revenue: 67000, expenses: 40000 },
-  { month: 'Jul', revenue: 72000, expenses: 42000 },
-];
+const MOCK_CHART_DATA: { month: string; revenue: number; expenses: number }[] = [];
 
 const Accounting: React.FC = () => {
   const { settings, addAuditEntry, globalInvoices, globalExpenses, addExpense } = useUser();

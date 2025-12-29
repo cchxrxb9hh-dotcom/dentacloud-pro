@@ -29,17 +29,14 @@ import { useUser } from '../App';
 import ConfirmationModal from '../components/ConfirmationModal';
 import StaffDocumentsModal from '../components/StaffDocumentsModal';
 
-const MOCK_STAFF: User[] = [
-  { id: '1', icNumber: '800101-14-1111', name: 'Dr. Sarah Johnson', role: 'Admin', email: 'sarah@dentacloud.pro', phone: '+60123456789', status: 'Active', address: '123 Medical Dr, Downtown', annualLeaveEntitlement: 25 },
-  { id: '2', icNumber: '880512-10-2222', name: 'Dr. Michael Chen', role: 'Doctor', email: 'm.chen@dentacloud.pro', phone: '+60123456780', status: 'Active', address: '456 Westside Blvd', annualLeaveEntitlement: 20 },
-  { id: '3', icNumber: '951120-05-3333', name: 'Emma Wilson', role: 'Assistant', email: 'emma.w@dentacloud.pro', phone: '+60123456781', status: 'Active', address: '789 Oak Ave', annualLeaveEntitlement: 18 },
-  { id: '4', icNumber: '820415-08-4444', name: 'Robert Blake', role: 'Accountant', email: 'billing@dentacloud.pro', phone: '+60123456782', status: 'Active', address: '101 Finance Row', annualLeaveEntitlement: 20 },
-  { id: '5', icNumber: '900612-14-5555', name: 'Lisa Ray', role: 'Assistant', email: 'lisa@dentacloud.pro', phone: '+60123456783', status: 'Inactive', address: '303 River Ln', annualLeaveEntitlement: 18 },
-];
+const INITIAL_STAFF: User[] = [];
 
 const UserManagement: React.FC = () => {
   const { addAuditEntry } = useUser();
-  const [staff, setStaff] = useState<User[]>(MOCK_STAFF);
+  const [staff, setStaff] = useState<User[]>(() => {
+    const saved = localStorage.getItem('denta_staff');
+    return saved ? JSON.parse(saved) : INITIAL_STAFF;
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<Partial<User>>({});
@@ -48,6 +45,10 @@ const UserManagement: React.FC = () => {
   const [docsStaff, setDocsStaff] = useState<User | null>(null);
   const [isMyKadOpen, setIsMyKadOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  React.useEffect(() => {
+    localStorage.setItem('denta_staff', JSON.stringify(staff));
+  }, [staff]);
 
   const getRoleIcon = (role: UserRole) => {
     switch (role) {

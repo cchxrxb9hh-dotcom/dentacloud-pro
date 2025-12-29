@@ -5,31 +5,9 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useUser } from '../App';
 
-const MOCK_PATIENTS: Patient[] = [
-  { id: '1', firstName: 'John', lastName: 'Doe', email: 'john@example.com', phone: '123-456-7890', dateOfBirth: '1985-06-15', gender: 'Male', address: '123 Maple St', medicalHistory: ['Allergy to Penicillin'], status: 'Active', lastVisit: '2023-11-20', registrationDate: new Date().toISOString().split('T')[0] },
-  { id: '2', firstName: 'Alice', lastName: 'Smith', email: 'alice@example.com', phone: '234-567-8901', dateOfBirth: '1992-02-28', gender: 'Female', address: '456 Oak Ave', medicalHistory: [], status: 'Active', lastVisit: '2023-12-05', registrationDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
-  { id: '3', firstName: 'Michael', lastName: 'Brown', email: 'michael@example.com', phone: '345-678-9012', dateOfBirth: '1978-09-10', gender: 'Male', address: '789 Pine Ln', medicalHistory: ['Diabetes Type 2'], status: 'Active', lastVisit: '2023-10-15', registrationDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
-  { id: '4', firstName: 'Emma', lastName: 'Wilson', email: 'emma@example.com', phone: '456-789-0123', dateOfBirth: '2005-12-01', gender: 'Female', address: '321 Elm Dr', medicalHistory: ['Asthma'], status: 'Inactive', lastVisit: '2022-05-12', registrationDate: new Date(Date.now() - 400 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
-  { id: '5', firstName: 'David', lastName: 'Lee', email: 'david@example.com', phone: '567-890-1234', dateOfBirth: '1988-03-22', gender: 'Male', address: '654 Birch St', medicalHistory: [], status: 'Active', lastVisit: '2023-11-28', registrationDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
-];
+const MOCK_PATIENTS: Patient[] = [];
 
-const PRESCRIPTION_LOG = [
-    { id: '1', date: '2024-07-15', patientName: 'John Doe', medication: 'Amoxicillin 500mg', category: 'Antibiotics', address: '123 Maple St, North Hills, NY' },
-    { id: '2', date: '2024-07-15', patientName: 'John Doe', medication: 'Ibuprofen 400mg', category: 'Analgesics', address: '123 Maple St, North Hills, NY' },
-    { id: '3', date: '2024-07-14', patientName: 'Alice Smith', medication: 'Ibuprofen 400mg', category: 'Analgesics', address: '456 Oak Ave, Westside, NY' },
-    { id: '4', date: '2024-07-14', patientName: 'Michael Brown', medication: 'Metronidazole 200mg', category: 'Antibiotics', address: '789 Pine Ln, Downtown, NY' },
-    { id: '5', date: '2024-07-13', patientName: 'Emma Wilson', medication: 'Chlorhexidine Rinse 0.12%', category: 'Antiseptics', address: '321 Elm Dr, Highland, NY' },
-    { id: '6', date: '2024-07-12', patientName: 'David Lee', medication: 'Clindamycin 300mg', category: 'Antibiotics', address: '654 Birch St, Riverside, NY' },
-    { id: '7', date: '2024-07-12', patientName: 'Sarah Connor', medication: 'Dexamethasone 0.5mg', category: 'Steroids', address: '101 Cyberdyne Blvd, Valley, CA' },
-    { id: '8', date: '2024-06-20', patientName: 'John Doe', medication: 'Chlorhexidine Rinse 0.12%', category: 'Antiseptics', address: '123 Maple St, North Hills, NY' },
-    { id: '9', date: '2024-06-05', patientName: 'Alice Smith', medication: 'Amoxicillin 500mg', category: 'Antibiotics', address: '456 Oak Ave, Westside, NY' },
-    { id: '10', date: '2024-05-15', patientName: 'Michael Brown', medication: 'Clindamycin 300mg', category: 'Antibiotics', address: '789 Pine Ln, Downtown, NY' },
-    { id: '11', date: '2024-04-20', patientName: 'John Doe', medication: 'Dexamethasone 0.5mg', category: 'Steroids', address: '123 Maple St, North Hills, NY' },
-    { id: '12', date: '2024-03-10', patientName: 'Alice Smith', medication: 'Metronidazole 200mg', category: 'Antibiotics', address: '456 Oak Ave, Westside, NY' },
-    { id: '13', date: '2024-02-01', patientName: 'Michael Brown', medication: 'Ibuprofen 400mg', category: 'Analgesics', address: '789 Pine Ln, Downtown, NY' },
-    { id: '14', date: '2023-11-22', patientName: 'David Lee', medication: 'Amoxicillin 500mg', category: 'Antibiotics', address: '654 Birch St, Riverside, NY' },
-    { id: '15', date: '2023-09-01', patientName: 'Sarah Connor', medication: 'Amoxicillin 500mg', category: 'Antibiotics', address: '101 Cyberdyne Blvd, Valley, CA' },
-];
+const PRESCRIPTION_LOG: { id: string; date: string; patientName: string; medication: string; category: string; address: string }[] = [];
 
 const medicationCategories = ['All', 'Antibiotics', 'Analgesics', 'Antiseptics', 'Steroids'];
 

@@ -132,7 +132,9 @@ const DEFAULT_RECEIPT_TEMPLATE = `
   {{items_html_table}}
   <div style="display: flex; justify-content: flex-end; margin-top: 2rem;">
     <div style="width: 22rem;">
-      <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem; font-weight: 900; font-size: 1.25rem; background-color: #dcfce7; border-radius: 1rem; color: #166534;"><span>AMOUNT PAID</span><span>{{currency}}{{totalPaid}}</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 0.75rem 1.25rem; font-size: 0.875rem; border-bottom: 1px solid #e2e8f0;"><span style="color: #64748b; font-weight: 500;">Invoice Total</span><span style="font-weight: 700;">{{currency}}{{totalAmount}}</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 1rem 1.25rem; font-weight: 900; font-size: 1.25rem; background-color: #dcfce7; border-radius: 1rem; color: #166534; margin-top: 0.5rem;"><span>AMOUNT PAID</span><span>{{currency}}{{totalPaid}}</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 0.75rem 1.25rem; font-size: 0.875rem; margin-top: 0.5rem;"><span style="color: #64748b; font-weight: 500;">Balance Due</span><span style="font-weight: 700;">{{currency}}{{balanceDue}}</span></div>
     </div>
   </div>
 </div>
@@ -164,26 +166,11 @@ const DEFAULT_SETTINGS: Omit<ClinicSettings, ''> = {
   receiptTemplate: DEFAULT_RECEIPT_TEMPLATE,
 };
 
-const INITIAL_MOCK_INVOICES: Invoice[] = [
-  { id: 'INV-JD-1', patientId: '1', patientName: 'John Doe', branchId: 'b1', date: '2024-06-10', amount: 500, status: 'Paid', items: [{description: 'Root Canal', price: 500}], providerId: 'd1', providerName: 'Dr. Sarah Johnson', recordType: 'Invoice', paidAmount: 500 },
-  { id: 'RCPT-JD-1', patientId: '1', patientName: 'John Doe', branchId: 'b1', date: '2024-06-10', amount: 500, status: 'Paid', items: [{description: 'Root Canal', price: 500}], providerId: 'd1', providerName: 'Dr. Sarah Johnson', recordType: 'Receipt', paidAmount: 500, relatedInvoiceId: 'INV-JD-1' },
-  { id: 'INV-JD-2', patientId: '1', patientName: 'John Doe', branchId: 'b1', date: '2024-05-10', amount: 50, status: 'Paid', items: [{description: 'Consultation', price: 50}], providerId: 'd1', providerName: 'Dr. Sarah Johnson', recordType: 'Invoice', paidAmount: 50 },
-  { id: 'RCPT-JD-2', patientId: '1', patientName: 'John Doe', branchId: 'b1', date: '2024-05-10', amount: 50, status: 'Paid', items: [{description: 'Consultation', price: 50}], providerId: 'd1', providerName: 'Dr. Sarah Johnson', recordType: 'Receipt', paidAmount: 50, relatedInvoiceId: 'INV-JD-2' },
-  { id: 'INV-002', patientId: '2', patientName: 'Alice Smith', branchId: 'b1', date: '2024-05-12', amount: 120, status: 'Pending', items: [{description: 'Scaling & Polishing', price: 120}], providerId: 'd2', providerName: 'Dr. Michael Chen', recordType: 'Invoice', paidAmount: 0 },
-];
+const INITIAL_MOCK_INVOICES: Invoice[] = [];
 
-const INITIAL_MOCK_EXPENSES: Expense[] = [
-  { id: 'ex1', date: '2024-07-15', category: 'Utilities', description: 'Electric Bill - June', amount: 850.20, paymentMethodId: 'pm3', branchId: 'b1', status: 'Paid' },
-  { id: 'ex2', date: '2024-07-10', category: 'Supplies', description: 'Office Stationary', amount: 120.50, paymentMethodId: 'pm1', branchId: 'b1', status: 'Paid' },
-];
+const INITIAL_MOCK_EXPENSES: Expense[] = [];
 
-const INITIAL_MOCK_PATIENTS: Patient[] = [
-  { id: '1', icNumber: '850615-10-5555', firstName: 'John', lastName: 'Doe', email: 'john@example.com', phone: '123-456-7890', dateOfBirth: '1985-06-15', gender: 'Male', address: '123 Maple St', medicalHistory: ['Allergy to Penicillin'], status: 'Active', lastVisit: '2023-11-20', registrationDate: new Date().toISOString().split('T')[0] },
-  { id: '2', icNumber: '920228-05-1234', firstName: 'Alice', lastName: 'Smith', email: 'alice@example.com', phone: '234-567-8901', dateOfBirth: '1992-02-28', gender: 'Female', address: '456 Oak Ave', medicalHistory: [], status: 'Active', lastVisit: '2023-12-05', registrationDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
-  { id: '3', icNumber: '780910-14-6677', firstName: 'Michael', lastName: 'Brown', email: 'michael@example.com', phone: '345-678-9012', dateOfBirth: '1977-01-10', gender: 'Male', address: '789 Pine Ln', medicalHistory: ['Diabetes Type 2'], status: 'Active', lastVisit: '2023-10-15', registrationDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
-  { id: '4', icNumber: '051201-01-8899', firstName: 'Emma', lastName: 'Wilson', email: 'emma@example.com', phone: '456-789-0123', dateOfBirth: '2005-12-01', gender: 'Female', address: '321 Elm Dr', medicalHistory: ['Asthma'], status: 'Inactive', lastVisit: '2022-05-12', registrationDate: new Date(Date.now() - 400 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
-  { id: '5', icNumber: '880322-10-2233', firstName: 'David', lastName: 'Lee', email: 'david@example.com', phone: '567-890-1234', dateOfBirth: '1988-03-22', gender: 'Male', address: '654 Birch St', medicalHistory: [], status: 'Active', lastVisit: '2023-11-28', registrationDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
-];
+const INITIAL_MOCK_PATIENTS: Patient[] = [];
 
 const INITIAL_MOCK_SERVICES: TreatmentService[] = [
   { id: '1', name: 'Comprehensive Consultation', category: 'Diagnostic', description: "A thorough evaluation of oral health, including dental charting, periodontal assessment, cancer screening, and personalized treatment planning.", cost: 50, duration: '30 min', commonNotes: "Patient presented for a comprehensive exam. Full mouth dental charting, periodontal probing, and oral cancer screening performed. Discussed findings with patient and formulated a personalized treatment plan. Patient understands and agrees to the proposed treatment." },
@@ -607,20 +594,17 @@ const UserProvider = ({ children }: React.PropsWithChildren<{}>) => {
 
   const login = (email: string, pass: string) => {
     setSessionTimeoutReason(null);
-    const mockUser: User = {
-      id: '1',
-      name: 'Dr. Sarah Johnson',
-      role: 'Admin',
-      avatar: 'https://picsum.photos/seed/doctor/100/100',
-      email: email,
-      assignedBranchId: 'b1',
-      annualLeaveEntitlement: 20,
-    };
-    setCurrentUser(mockUser);
-    setIsAuthenticated(true);
-    localStorage.setItem('denta_user', JSON.stringify(mockUser));
-    resetTimer();
-    addAuditEntry('User Login Successful', 'Security', `Identity verified for ${email}`);
+    const savedStaff = localStorage.getItem('denta_staff');
+    const staffList = savedStaff ? JSON.parse(savedStaff) : [];
+    const existingUser = staffList.find((s: User) => s.email?.toLowerCase() === email.toLowerCase());
+    
+    if (existingUser) {
+      setCurrentUser(existingUser);
+      setIsAuthenticated(true);
+      localStorage.setItem('denta_user', JSON.stringify(existingUser));
+      resetTimer();
+      addAuditEntry('User Login Successful', 'Security', `Identity verified for ${email}`);
+    }
   };
 
   const logout = (reason?: string) => {
